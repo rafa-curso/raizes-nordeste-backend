@@ -1,0 +1,99 @@
+@startuml
+skinparam roundcorner 8
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+package "Canais de Entrada (Clientes & Operação)" {
+  [App Mobile Android/iOS] as App
+  [Totens de Autoatendimento] as Totem
+  [Balcão / Caixa PDV] as Balcao
+  [Pickup Express Retirada] as Pickup
+  [Portal Web Administrativo] as WebAdmin
+}
+
+cloud "Borda e Segurança" {
+  [HTTPS / TLS 1.3] as TLS
+  [Filtro JWT & Spring Security (RBAC)] as Security
+}
+
+package "Backend Raízes do Nordeste (Spring Boot)" {
+  package "Camada Web / REST Controllers" {
+    [AuthController] as C_Auth
+    [CardapioController] as C_Cardapio
+    [UnidadeController] as C_Unidade
+    [EstoqueController] as C_Estoque
+    [PedidoController] as C_Pedido
+    [AuditoriaController] as C_Auditoria
+    [GlobalExceptionHandler (RFC 7807)] as C_Error
+  }
+
+  package "Camada de Negócio e Serviços" {
+    [AutenticacaoService] as S_Auth
+    [CardapioService] as S_Cardapio
+    [UnidadeService] as S_Unidade
+    [EstoqueService] as S_Estoque
+    [PedidoService] as S_Pedido
+    [AuditoriaService] as S_Auditoria
+    [GatewayPagamentoExternoService] as S_Gateway
+  }
+
+  package "Camada de Persistência (Spring Data JPA)" {
+    [UsuarioRepository] as R_User
+    [UnidadeFranquiaRepository] as R_Unid
+    [ProdutoCardapioRepository] as R_Prod
+    [InventarioEstoqueRepository] as R_Estoque
+    [PedidoRepository] as R_Pedido
+    [TransacaoPagamentoRepository] as R_Pag
+    [RegistroAuditoriaRepository] as R_Audit
+  }
+}
+
+database "Banco de Dados Relacional" {
+  [H2 Database Engine / Dialeto SQL] as DB
+}
+
+cloud "Serviços Externos" {
+  [Gateway de Pagamento Desacoplado\n(PIX / Adquirentes Mock)] as ExtGateway
+}
+
+App --> TLS
+Totem --> TLS
+Balcao --> TLS
+Pickup --> TLS
+WebAdmin --> TLS
+
+TLS --> Security
+Security --> C_Auth
+Security --> C_Cardapio
+Security --> C_Unidade
+Security --> C_Estoque
+Security --> C_Pedido
+Security --> C_Auditoria
+
+C_Auth --> S_Auth
+C_Cardapio --> S_Cardapio
+C_Unidade --> S_Unidade
+C_Estoque --> S_Estoque
+C_Pedido --> S_Pedido
+C_Auditoria --> S_Auditoria
+
+S_Pedido --> S_Estoque : reserva / restitui
+S_Pedido --> S_Gateway : solicita transação
+S_Gateway --> ExtGateway : comunicação desacoplada
+
+S_Auth --> R_User
+S_Unidade --> R_Unid
+S_Cardapio --> R_Prod
+S_Estoque --> R_Estoque
+S_Pedido --> R_Pedido
+S_Pedido --> R_Pag
+S_Auditoria --> R_Audit
+
+R_User --> DB
+R_Unid --> DB
+R_Prod --> DB
+R_Estoque --> DB
+R_Pedido --> DB
+R_Pag --> DB
+R_Audit --> DB
+@enduml

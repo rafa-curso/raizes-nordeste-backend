@@ -1,0 +1,50 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: raizes-nordeste-gestao
+  datasource:
+    url: jdbc:h2:file:./data/raizes_nordeste_db;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+# Configurações de Segurança e JWT
+app:
+  jwt:
+    # Chave secreta HMAC-SHA256 de 256 bits codificada em Base64 para garantir integridade e conformidade
+    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    expiration-ms: 86400000 # 24 horas em milissegundos
+    issuer: raizes-nordeste-api
+  autor:
+    nome: "Rafael Inácio da Silva"
+    ru: "4736098"
+    instituicao: "Centro Universitário Internacional UNINTER"
+    ano: 2026
+
+# Documentação OpenAPI / Swagger
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    doc-expansion: none

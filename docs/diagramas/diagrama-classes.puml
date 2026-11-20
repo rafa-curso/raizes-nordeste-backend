@@ -1,0 +1,172 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam roundcorner 5
+
+package "br.com.raizesnordeste.gestao.domain.model" {
+
+  class Usuario {
+    - id : Long
+    - nomeCompleto : String
+    - email : String
+    - senha : String
+    - telefone : String
+    - perfil : PerfilAcesso
+    - ativo : boolean
+    - consentimentoLgpd : boolean
+    - dataAceiteLgpd : LocalDateTime
+    - pontosFidelidade : Integer
+    - dataCadastro : LocalDateTime
+    + creditarPontos(int) : void
+    + registrarConsentimentoLgpd(boolean) : void
+  }
+
+  class UnidadeFranquia {
+    - id : Long
+    - codigoIdentificador : String
+    - nomeFantasia : String
+    - cidade : String
+    - uf : String
+    - enderecoCompleto : String
+    - telefoneContato : String
+    - formatoOperacao : FormatoOperacao
+    - ativo : boolean
+  }
+
+  class ProdutoCardapio {
+    - id : Long
+    - codigoSku : String
+    - nome : String
+    - descricao : String
+    - precoVenda : BigDecimal
+    - categoria : CategoriaCardapio
+    - sazonalJunino : boolean
+    - disponivel : boolean
+  }
+
+  class InventarioEstoque {
+    - id : Long
+    - unidade : UnidadeFranquia
+    - produto : ProdutoCardapio
+    - quantidadeDisponivel : Integer
+    - quantidadeMinimaSeguranca : Integer
+    + temEstoqueDisponivel(int) : boolean
+    + debitarEstoque(int) : void
+    + restituirEstoque(int) : void
+  }
+
+  class Pedido {
+    - id : Long
+    - codigoRastreio : String
+    - cliente : Usuario
+    - unidade : UnidadeFranquia
+    - canalOrigem : CanalAtendimento
+    - status : StatusPedido
+    - valorSubtotal : BigDecimal
+    - valorDescontoFidelidade : BigDecimal
+    - valorTotalLiquido : BigDecimal
+    - pontosGerados : Integer
+    - itens : List<ItemPedido>
+    - transacoes : List<TransacaoPagamento>
+    + adicionarItem(ProdutoCardapio, int) : void
+    + recalcularTotais() : void
+  }
+
+  class ItemPedido {
+    - id : Long
+    - pedido : Pedido
+    - produto : ProdutoCardapio
+    - quantidade : Integer
+    - precoUnitarioCobrado : BigDecimal
+    - subtotalItem : BigDecimal
+    + recalcularSubtotal() : void
+  }
+
+  class TransacaoPagamento {
+    - id : Long
+    - pedido : Pedido
+    - formaPagamento : FormaPagamento
+    - statusTransacao : StatusTransacao
+    - valorProcessado : BigDecimal
+    - nsuAutorizacaoGateway : String
+    - mensagemRetornoGateway : String
+  }
+
+  class RegistroAuditoria {
+    - id : Long
+    - tipoEvento : TipoEventoAuditoria
+    - usuarioResponsavel : String
+    - canalOrigem : String
+    - entidadeAlvo : String
+    - identificadorAlvo : String
+    - descricaoDetalhada : String
+  }
+
+  enum PerfilAcesso {
+    ROLE_CLIENTE
+    ROLE_GERENTE_LOJA
+    ROLE_ADMIN_MATRIZ
+  }
+
+  enum FormatoOperacao {
+    TRADICIONAL_COMPLETA
+    EXPRESS_REDUZIDA
+  }
+
+  enum CategoriaCardapio {
+    TAPIOCAS_ESPECIAIS
+    CUSCUZ_RECHEADOS
+    BEBIDAS_REGIONAIS
+    DOCES_E_SOBREMESAS
+    COMBOS_NORDESTINOS
+  }
+
+  enum CanalAtendimento {
+    APLICATIVO_MOBILE
+    TOTEM_AUTOATENDIMENTO
+    BALCAO_HUMANO
+    RETIRADA_PICKUP
+    PORTAL_WEB
+  }
+
+  enum StatusPedido {
+    RECEBIDO_AGUARDANDO_PAGAMENTO
+    PAGAMENTO_CONFIRMADO
+    EM_PREPARO_COZINHA
+    PRONTO_PARA_ENTREGA
+    CONCLUIDO_ENTREGUE
+    CANCELADO_ESTORNADO
+  }
+
+  enum FormaPagamento {
+    PIX_ESTANTANEO
+    CARTAO_CREDITO
+    CARTAO_DEBITO
+    VALE_REFEICAO
+  }
+
+  enum StatusTransacao {
+    PROCESSANDO
+    APROVADA
+    RECUSADA_SALDO_INSUFICIENTE
+    RECUSADA_SUSPEITA_FRAUDE
+    CANCELADA_REEMBOLSADA
+  }
+}
+
+Usuario "1" o-- "0..*" Pedido : cliente
+UnidadeFranquia "1" o-- "0..*" Pedido : unidade
+UnidadeFranquia "1" *-- "0..*" InventarioEstoque
+ProdutoCardapio "1" *-- "0..*" InventarioEstoque
+Pedido "1" *-- "1..*" ItemPedido
+ProdutoCardapio "1" o-- "0..*" ItemPedido
+Pedido "1" *-- "0..*" TransacaoPagamento
+
+Usuario --> PerfilAcesso
+UnidadeFranquia --> FormatoOperacao
+ProdutoCardapio --> CategoriaCardapio
+Pedido --> CanalAtendimento
+Pedido --> StatusPedido
+TransacaoPagamento --> FormaPagamento
+TransacaoPagamento --> StatusTransacao
+@enduml

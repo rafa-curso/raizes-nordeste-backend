@@ -1,0 +1,119 @@
+@startuml
+skinparam linetype ortho
+skinparam roundcorner 5
+hide circle
+
+entity "tb_usuarios" as Usuario {
+  * id : BIGINT <<PK>>
+  --
+  * nome_completo : VARCHAR(120)
+  * email : VARCHAR(100) <<UK>>
+  * senha_hash : VARCHAR(255)
+  telefone : VARCHAR(20)
+  * perfil : VARCHAR(30)
+  * ativo : BOOLEAN
+  * consentimento_lgpd : BOOLEAN
+  data_aceite_lgpd : DATETIME
+  * pontos_fidelidade : INT
+  * data_cadastro : DATETIME
+  data_ultimo_acesso : DATETIME
+}
+
+entity "tb_unidades_franquia" as Unidade {
+  * id : BIGINT <<PK>>
+  --
+  * codigo_identificador : VARCHAR(20) <<UK>>
+  * nome_fantasia : VARCHAR(120)
+  * cidade : VARCHAR(80)
+  * uf : VARCHAR(2)
+  * endereco_completo : VARCHAR(255)
+  telefone_contato : VARCHAR(20)
+  * formato_operacao : VARCHAR(30)
+  * ativo : BOOLEAN
+  * data_cadastro : DATETIME
+}
+
+entity "tb_produtos_cardapio" as Produto {
+  * id : BIGINT <<PK>>
+  --
+  * codigo_sku : VARCHAR(30) <<UK>>
+  * nome : VARCHAR(100)
+  descricao : VARCHAR(300)
+  * preco_venda : DECIMAL(10,2)
+  * categoria : VARCHAR(30)
+  * sazonal_junino : BOOLEAN
+  * disponivel : BOOLEAN
+  * data_cadastro : DATETIME
+}
+
+entity "tb_inventario_estoque" as Estoque {
+  * id : BIGINT <<PK>>
+  --
+  * unidade_id : BIGINT <<FK>>
+  * produto_id : BIGINT <<FK>>
+  * quantidade_disponivel : INT
+  * quantidade_minima_seguranca : INT
+  * data_atualizacao : DATETIME
+  --
+  <<UK: unidade_id + produto_id>>
+}
+
+entity "tb_pedidos" as Pedido {
+  * id : BIGINT <<PK>>
+  --
+  * codigo_rastreio : VARCHAR(36) <<UK>>
+  * cliente_id : BIGINT <<FK>>
+  * unidade_id : BIGINT <<FK>>
+  * canal_origem : VARCHAR(35)
+  * status_pedido : VARCHAR(35)
+  * valor_subtotal : DECIMAL(10,2)
+  * valor_desconto_fidelidade : DECIMAL(10,2)
+  * valor_total_liquido : DECIMAL(10,2)
+  pontos_gerados : INT
+  observacoes : VARCHAR(255)
+  * data_hora_abertura : DATETIME
+  data_hora_atualizacao : DATETIME
+}
+
+entity "tb_itens_pedido" as ItemPedido {
+  * id : BIGINT <<PK>>
+  --
+  * pedido_id : BIGINT <<FK>>
+  * produto_id : BIGINT <<FK>>
+  * quantidade : INT
+  * preco_unitario_cobrado : DECIMAL(10,2)
+  * subtotal_item : DECIMAL(10,2)
+}
+
+entity "tb_transacoes_pagamento" as Transacao {
+  * id : BIGINT <<PK>>
+  --
+  * pedido_id : BIGINT <<FK>>
+  * forma_pagamento : VARCHAR(30)
+  * status_transacao : VARCHAR(35)
+  * valor_processado : DECIMAL(10,2)
+  nsu_autorizacao_gateway : VARCHAR(64)
+  mensagem_retorno_gateway : VARCHAR(255)
+  * data_hora_processamento : DATETIME
+}
+
+entity "tb_registros_auditoria" as Auditoria {
+  * id : BIGINT <<PK>>
+  --
+  * tipo_evento : VARCHAR(40)
+  * usuario_responsavel : VARCHAR(100)
+  canal_origem : VARCHAR(35)
+  * entidade_alvo : VARCHAR(50)
+  identificador_alvo : VARCHAR(50)
+  descricao_detalhada : VARCHAR(500)
+  * data_hora_registro : DATETIME
+}
+
+Usuario ||--o{ Pedido : "1:N (cliente_id)"
+Unidade ||--o{ Pedido : "1:N (unidade_id)"
+Unidade ||--|{ Estoque : "1:N (unidade_id)"
+Produto ||--|{ Estoque : "1:N (produto_id)"
+Pedido  ||--|{ ItemPedido : "1:N (pedido_id)"
+Produto ||--o{ ItemPedido : "1:N (produto_id)"
+Pedido  ||--o{ Transacao : "1:N (pedido_id)"
+@enduml

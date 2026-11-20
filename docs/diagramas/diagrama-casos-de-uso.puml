@@ -1,0 +1,75 @@
+@startuml
+skinparam handwritten false
+skinparam monochrome false
+skinparam packageStyle rectangle
+skinparam shadowing false
+left to right direction
+
+actor "Cliente da Rede" as Cliente
+actor "Operador de Balcão / Caixa" as Operador
+actor "Equipe de Cozinha" as Cozinha
+actor "Gerente de Franquia" as Gerente
+actor "Administrador da Matriz" as AdminMatriz
+actor "Gateway de Pagamento Externo" as Gateway
+
+rectangle "Sistema de Gestão Multicanal - Raízes do Nordeste" {
+  usecase "Realizar Cadastro com Aceite LGPD" as UC01
+  usecase "Autenticar no Sistema (JWT)" as UC02
+  usecase "Consultar Cardápio Regional e Sazonais" as UC03
+  usecase "Consultar Unidades da Franquia" as UC04
+  usecase "Efetuar Pedido Multicanal (App/Totem/Web)" as UC05
+  usecase "Resgatar Pontos de Fidelidade" as UC06
+  usecase "Realizar Pagamento Desacoplado" as UC07
+  usecase "Acompanhar Status do Pedido" as UC08
+
+  usecase "Registrar Pedido Presencial no Balcão" as UC09
+  usecase "Consultar Pedidos em Preparo na Cozinha" as UC10
+  usecase "Atualizar Status Operacional do Pedido" as UC11
+
+  usecase "Monitorar Inventário Local" as UC12
+  usecase "Ajustar Saldo e Repor Estoque" as UC13
+
+  usecase "Gerenciar Cardápio Global da Franquia" as UC14
+  usecase "Cadastrar Novas Unidades Franqueadas" as UC15
+  usecase "Auditar Operações Sensíveis e Trilha LGPD" as UC16
+}
+
+Cliente --> UC01
+Cliente --> UC02
+Cliente --> UC03
+Cliente --> UC04
+Cliente --> UC05
+Cliente --> UC07
+Cliente --> UC08
+
+UC05 ..> UC06 : <<extend>>
+UC05 ..> UC07 : <<include>>
+
+Operador --> UC02
+Operador --> UC09
+Operador --> UC11
+
+Cozinha --> UC02
+Cozinha --> UC10
+Cozinha --> UC11
+
+Gerente --> UC02
+Gerente --> UC12
+Gerente --> UC13
+Gerente --> UC11
+
+AdminMatriz --> UC02
+AdminMatriz --> UC14
+AdminMatriz --> UC15
+AdminMatriz --> UC16
+AdminMatriz --> UC12
+
+UC07 --> Gateway : <<solicita autorização>>
+Gateway --> UC07 : <<retorno síncrono/assíncrono>>
+
+note right of UC16
+  Em conformidade com a LGPD e governança da franquia,
+  todas as operações de pedidos, pagamentos e estoque
+  são registradas com rastreabilidade auditável.
+end note
+@enduml

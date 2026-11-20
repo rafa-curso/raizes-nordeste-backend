@@ -1,0 +1,500 @@
+{
+  "info": {
+    "_postman_id": "raizes-nordeste-rafael-inacio-4736098",
+    "name": "Rede Raízes do Nordeste - API REST (Rafael Inácio da Silva RU: 4736098)",
+    "description": "Coleção oficial de testes automatizados e integração para a API Raízes do Nordeste. Cobre fluxos positivos, negativos, multicanalidade, segurança JWT, regras de negócio de estoque e gateway desacoplado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Autenticação e Usuários",
+      "item": [
+        {
+          "name": "01 - Login ADMIN Matriz (Sucesso 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code é 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('adminToken', json.tokenAcesso);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"admin@raizesnordeste.com\", \"senha\": \"admin123\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "02 - Login CLIENTE (Sucesso 200)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code é 200', function () { pm.response.to.have.status(200); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('clienteToken', json.tokenAcesso);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"cliente@raizesnordeste.com\", \"senha\": \"cliente123\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "03 - Login com Senha Incorreta (Negativo 401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code é 401', function () { pm.response.to.have.status(401); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"cliente@raizesnordeste.com\", \"senha\": \"senhaIncorreta\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "04 - Cadastro de Novo Cliente com LGPD (201 Created)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nomeCompleto\": \"Severino da Silva Aluno Teste\", \"email\": \"severino.teste@email.com\", \"senha\": \"senhaForte123\", \"telefone\": \"(81) 98765-4321\", \"consentimentoLgpd\": true}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/cadastrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "cadastrar"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Cardápio Regional e Sazonais",
+      "item": [
+        {
+          "name": "05 - Listar Todo Cardápio Disponível (Público 200)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cardapio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cardapio"
+              ]
+            }
+          }
+        },
+        {
+          "name": "06 - Filtrar Cardápio por Categoria CUSCUZ_RECHEADOS (200)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cardapio?categoria=CUSCUZ_RECHEADOS",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cardapio"
+              ]
+            }
+          }
+        },
+        {
+          "name": "07 - Cadastrar Item Sazonal Junino (ADMIN 201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"codigoSku\": \"CANJ-001\", \"nome\": \"Canjica Nordestina com Canela\", \"descricao\": \"Canjica de milho verde cremosa polvilhada com canela artesanal.\", \"precoVenda\": 13.5, \"categoria\": \"DOCES_E_SOBREMESAS\", \"sazonalJunino\": true, \"disponivel\": true}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/cardapio",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "cardapio"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Unidades da Franquia",
+      "item": [
+        {
+          "name": "08 - Listar Unidades Ativas da Rede (Público 200)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/unidades",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "unidades"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Controle de Estoque",
+      "item": [
+        {
+          "name": "09 - Consultar Estoque Unidade 1 (ADMIN / Gerente 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/estoque/unidade/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estoque",
+                "unidade",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "10 - Consultar Alertas de Estoque Baixo (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/estoque/alertas-minimo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estoque",
+                "alertas-minimo"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Ciclo de Pedidos e Gateway Desacoplado",
+      "item": [
+        {
+          "name": "11 - Criar Pedido via App Mobile com Reserva (CLIENTE 201)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code é 201', function () { pm.response.to.have.status(201); });",
+                  "var json = pm.response.json();",
+                  "pm.environment.set('pedidoId', json.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"unidadeId\": 1, \"canalOrigem\": \"APLICATIVO_MOBILE\", \"observacoes\": \"Caprichar na manteiga de garrafa\", \"resgatarDescontoFidelidade\": false, \"itens\": [{\"produtoId\": 1, \"quantidade\": 2}, {\"produtoId\": 7, \"quantidade\": 1}]}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "12 - Processar Pagamento Aprovado via PIX Desacoplado (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"formaPagamento\": \"PIX_ESTANTANEO\", \"simularAprovacao\": true}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos/{{pedidoId}}/pagamento",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos",
+                "{{pedidoId}}",
+                "pagamento"
+              ]
+            }
+          }
+        },
+        {
+          "name": "13 - Avançar Status para EM_PREPARO_COZINHA (ADMIN 200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"novoStatus\": \"EM_PREPARO_COZINHA\", \"justificativaOperacional\": \"Pedido encaminhado para a equipe da cozinha\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos/{{pedidoId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos",
+                "{{pedidoId}}",
+                "status"
+              ]
+            }
+          }
+        },
+        {
+          "name": "14 - Consultar Detalhes do Pedido e Transações (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/pedidos/{{pedidoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pedidos",
+                "{{pedidoId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Trilha de Auditoria e Governança",
+      "item": [
+        {
+          "name": "15 - Listar Logs de Auditoria do Sistema (ADMIN 200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auditoria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auditoria"
+              ]
+            }
+          }
+        },
+        {
+          "name": "16 - Tentativa de Auditoria por CLIENTE (Negativo 403 Proibido)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{clienteToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auditoria",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auditoria"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
