@@ -3,6 +3,9 @@ package br.com.raizesnordeste.gestao.config;
 import br.com.raizesnordeste.gestao.domain.model.Usuario;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -10,8 +13,17 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+/**
+ * Provedor JWT responsável pela geração, validação e extração de dados dos tokens.
+ * A chave secreta é obtida exclusivamente via variável de ambiente APP_JWT_SECRET.
+ *
+ * Autor: Rafael Inácio da Silva (RU: 4736098)
+ */
 @Component
 public class JwtTokenProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
+    private static final int TAMANHO_MINIMO_CHAVE = 32;
 
     private final SecretKey chaveSecreta;
     private final long tempoExpiracaoMs;
@@ -21,9 +33,21 @@ public class JwtTokenProvider {
             @Value("${app.jwt.secret}") String segredo,
             @Value("${app.jwt.expiration-ms}") long expiracao,
             @Value("${app.jwt.issuer:raizes-nordeste-api}") String emissor) {
+
+        if (segredo == null || segredo.isBlank() || segredo.length() < TAMANHO_MINIMO_CHAVE) {
+            throw new IllegalStateException(
+                    "A variável APP_JWT_SECRET não está configurada ou possui menos de "
+                    + TAMANHO_MINIMO_CHAVE + " caracteres. Configure-a como variável de ambiente.");
+        }
+
         this.chaveSecreta = Keys.hmacShaKeyFor(segredo.getBytes(StandardCharsets.UTF_8));
         this.tempoExpiracaoMs = expiracao;
         this.emissor = emissor;
+    }
+
+    @PostConstruct
+    public void validarConfiguracao() {
+        log.info("JwtTokenProvider inicializado com sucesso. Emissor: {}, Expiração: {}ms", emissor, tempoExpiracaoMs);
     }
 
     public String gerarToken(Usuario usuario) {

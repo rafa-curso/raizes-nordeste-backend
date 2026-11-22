@@ -21,18 +21,21 @@ spring:
         format_sql: true
   h2:
     console:
-      enabled: true
+      enabled: false
       path: /h2-console
       settings:
-        web-allow-others: true
+        web-allow-others: false
 
 # Configurações de Segurança e JWT
+# A chave JWT deve ser definida via variável de ambiente APP_JWT_SECRET.
+# Nunca publicar a chave secreta no repositório.
 app:
   jwt:
-    # Chave secreta HMAC-SHA256 de 256 bits codificada em Base64 para garantir integridade e conformidade
-    secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    secret: ${APP_JWT_SECRET}
     expiration-ms: 86400000 # 24 horas em milissegundos
     issuer: raizes-nordeste-api
+  cors:
+    allowed-origins: ${APP_CORS_ORIGINS:}
   autor:
     nome: "Rafael Inácio da Silva"
     ru: "4736098"
@@ -48,3 +51,20 @@ springdoc:
     operations-sorter: method
     tags-sorter: alpha
     doc-expansion: none
+
+---
+# Perfil de desenvolvimento: habilita somente o H2 Console local.
+# APP_JWT_SECRET continua obrigatória também neste perfil.
+spring:
+  config:
+    activate:
+      on-profile: dev
+  h2:
+    console:
+      enabled: true
+      settings:
+        web-allow-others: false
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ORIGINS:http://localhost:3000,http://localhost:8080}

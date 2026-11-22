@@ -1,0 +1,29 @@
+# Configuração exclusiva para ambiente de TESTES AUTOMATIZADOS
+# Chave JWT de teste — NÃO utilizar em produção
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  h2:
+    console:
+      enabled: false
+
+app:
+  jwt:
+    secret: test-only-jwt-secret-key-raizes-nordeste-min-32-chars-2026
+    expiration-ms: 86400000
+    issuer: raizes-nordeste-api-test
+  cors:
+    allowed-origins: http://localhost:8080
+
+logging:
+  level:
+    root: WARN
+    br.com.raizesnordeste.gestao: INFO

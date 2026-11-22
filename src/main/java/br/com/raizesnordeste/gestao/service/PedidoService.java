@@ -75,15 +75,22 @@ public class PedidoService {
 
         // Resgate opcional de desconto por fidelidade
         if (Boolean.TRUE.equals(request.resgatarDescontoFidelidade()) && cliente.getPontosFidelidade() > 0) {
-            // Cada 10 pontos concedem R$ 5,00 de desconto, limitado a 50% do subtotal
-            int pontosParaUsar = Math.min(cliente.getPontosFidelidade(), 50);
-            BigDecimal desconto = BigDecimal.valueOf((pontosParaUsar / 10) * 5.0);
+            // Regra: cada 10 pontos concedem R$ 5,00 de desconto, limitado a 50% do subtotal.
+            int pontosDisponiveis = cliente.getPontosFidelidade();
+            int blocosDisponiveis = Math.min(pontosDisponiveis, 50) / 10;
+
+            // Como cada benefício é indivisível (10 pontos = R$ 5,00), somente blocos
+            // completos que respeitem o teto de 50% podem ser usados.
+            BigDecimal valorPorBloco = new BigDecimal("5.00");
             BigDecimal limiteDesconto = pedido.getValorSubtotal().multiply(new BigDecimal("0.50"));
-            if (desconto.compareTo(limiteDesconto) > 0) {
-                desconto = limiteDesconto;
-            }
-            pedido.setValorDescontoFidelidade(desconto);
-            cliente.setPontosFidelidade(cliente.getPontosFidelidade() - pontosParaUsar);
+            int blocosPermitidosPeloLimite = limiteDesconto.divideToIntegralValue(valorPorBloco).intValue();
+            int blocosEfetivamenteUsados = Math.min(blocosDisponiveis, blocosPermitidosPeloLimite);
+
+            BigDecimal descontoEfetivo = valorPorBloco.multiply(BigDecimal.valueOf(blocosEfetivamenteUsados));
+            int pontosEfetivamenteConsumidos = blocosEfetivamenteUsados * 10;
+
+            pedido.setValorDescontoFidelidade(descontoEfetivo);
+            cliente.setPontosFidelidade(Math.max(0, pontosDisponiveis - pontosEfetivamenteConsumidos));
             usuarioRepository.save(cliente);
         }
 

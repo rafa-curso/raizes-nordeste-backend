@@ -12,7 +12,7 @@
 
 A **API Raízes do Nordeste** é uma solução corporativa completa para centralização, governança e integração operacional da rede de lanchonetes de culinária nordestina "Raízes do Nordeste".
 
-O sistema unifica a jornada do cliente através de múltiplos canais de atendimento (**Aplicativo Mobile, Totens de Autoatendimento, Balcão Presencial, Retirada Rápida Pickup e Portal Web**), garantindo consistência no cardápio regional, controle descentralizado de estoque por franquia, integração desacoplada com gateways de pagamento externos e total conformidade com a **Lei Geral de Proteção de Dados (LGPD)**.
+O sistema unifica a jornada do cliente através de múltiplos canais de atendimento (**Aplicativo Mobile, Totens de Autoatendimento, Balcão Presencial, Retirada Rápida Pickup e Portal Web**), garantindo consistência no cardápio regional, controle descentralizado de estoque por franquia, uma camada desacoplada de pagamento com implementação simulada e recursos de governança relacionados à **Lei Geral de Proteção de Dados (LGPD)**.
 
 ---
 
@@ -20,8 +20,8 @@ O sistema unifica a jornada do cliente através de múltiplos canais de atendime
 
 - **Controle Resiliente de Estoque com Rollback Automático:** Ao criar um pedido, os itens são reservados. Caso o pagamento simulado no gateway externo seja recusado ou o pedido seja cancelado, o estoque é **automaticamente restituído** com emissão de evento de compensação no log de auditoria.
 - **Governança LGPD por Padrão (Privacy by Design):** Cadastro de usuários com registro explícito de consentimento (`consentimentoLgpd`), registro de data/hora do aceite e anonimização de senhas via hash BCrypt.
-- **Programa de Fidelização Integrado:** Regra de negócio que concede 1 ponto para cada R$ 10,00 consumidos em pedidos pagos, além de permitir o resgate progressivo de descontos no fechamento da compra.
-- **Integração de Pagamento Desacoplada:** Arquitetura que isola o processamento financeiro do núcleo do sistema, suportando webhooks e retornos assíncronos via serviço dedicado `GatewayPagamentoExternoService`.
+- **Programa de Fidelização Integrado:** Concede 1 ponto para cada R$ 10,00 em pedidos pagos. No resgate, cada bloco completo de 10 pontos concede R$ 5,00, limitado a 50% do subtotal; apenas os pontos correspondentes ao desconto efetivamente concedido são consumidos.
+- **Gateway de Pagamento Simulado e Desacoplado:** `GatewayPagamentoExternoService` simula aprovação ou recusa e gera um NSU local nas aprovações. Não existe comunicação real com Cielo, Stone, PIX/Banco Central ou outra instituição financeira.
 - **Trilha de Auditoria Auditável:** Monitoramento de eventos críticos (`RegistroAuditoria`) registrando usuário responsável, IP/canal, entidade afetada e payload resumido.
 - **Tratamento de Exceções Padronizado (RFC 7807):** Respostas de erro no formato *Problem Details* com status HTTP semânticos (400, 401, 403, 404, 409).
 - **Cobertura de Testes Automatizados:** Testes de integração desenvolvidos com Spring Boot Test e JUnit 5 cobrindo cenários positivos e negativos.
@@ -48,6 +48,16 @@ O sistema unifica a jornada do cliente através de múltiplos canais de atendime
 - **Java JDK 17** instalado e configurado no PATH do sistema operacional.
 - O Maven Wrapper (`mvnw` / `mvnw.cmd`) já está incluído na raiz do projeto, dispensando instalações adicionais de Maven ou servidores externos de banco de dados.
 
+### Variáveis de ambiente obrigatórias
+
+Use `.env.example` apenas como referência e defina as variáveis no ambiente do processo. O Spring Boot não carrega arquivos `.env` automaticamente.
+
+| Variável | Obrigatoriedade | Finalidade |
+| :--- | :--- | :--- |
+| `APP_JWT_SECRET` | Obrigatória | Segredo JWT com no mínimo 32 caracteres; não há valor padrão no código |
+| `APP_CORS_ORIGINS` | Obrigatória fora de `dev` | Lista de origens exatas separadas por vírgula; curingas são rejeitados |
+| `SPRING_PROFILES_ACTIVE` | Recomendada | Use `dev` para a demonstração local; em produção não ative `dev` ou `test` |
+
 ### Execução dos Testes Automatizados
 No terminal, dentro da pasta do projeto backend:
 ```powershell
@@ -57,6 +67,9 @@ No terminal, dentro da pasta do projeto backend:
 ### Inicialização do Servidor
 Para iniciar a API em modo de desenvolvimento:
 ```powershell
+$env:APP_JWT_SECRET = "gere-e-use-uma-chave-local-com-pelo-menos-32-caracteres"
+$env:APP_CORS_ORIGINS = "http://localhost:3000,http://localhost:8080"
+$env:SPRING_PROFILES_ACTIVE = "dev"
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -67,9 +80,9 @@ http://localhost:8080
 
 ---
 
-## 5. Acesso ao Banco de Dados (Console H2)
+## 5. Acesso ao Banco de Dados (Console H2 em desenvolvimento)
 
-O banco de dados H2 funciona em modo de arquivo persistente em `./data/raizes_nordeste_db`.
+O banco de dados H2 funciona em modo de arquivo persistente em `./data/raizes_nordeste_db`. O console web fica **desabilitado por padrão** e só é habilitado com o perfil `dev`; o acesso remoto permanece desabilitado.
 
 - **URL da Console Web:** `http://localhost:8080/h2-console`
 - **JDBC Driver Class:** `org.h2.Driver`
@@ -92,9 +105,9 @@ Com a aplicação em execução, acesse a documentação interativa com suporte 
 
 ---
 
-## 7. Credenciais Iniciais de Demonstração (Seed Data)
+## 7. Credenciais de Demonstração (somente `dev` e `test`)
 
-Ao iniciar pela primeira vez, a aplicação alimenta o banco de dados automaticamente com dados de homologação:
+Somente nos perfis `dev` e `test`, a aplicação alimenta o banco de dados vazio com dados de demonstração. A carga não é executada no perfil padrão nem em produção; contas administrativas reais devem ser provisionadas por procedimento interno controlado.
 
 | Perfil de Acesso | E-mail de Login | Senha | Descrição de Acessos |
 | :--- | :--- | :--- | :--- |
@@ -149,6 +162,13 @@ Ao iniciar pela primeira vez, a aplicação alimenta o banco de dados automatica
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/v1/auditoria` | Consulta os registros de auditoria e segurança | ADMIN_MATRIZ |
 
+### 8.7 Controles de segurança
+
+- O cadastro público não recebe `perfil`; todo novo usuário é criado como `ROLE_CLIENTE`.
+- A chave de assinatura JWT é obtida exclusivamente de `APP_JWT_SECRET` e a aplicação falha na inicialização se ela estiver ausente ou tiver menos de 32 caracteres.
+- O CORS aceita apenas origens exatas configuradas em `APP_CORS_ORIGINS`, com credenciais habilitadas sem uso de curingas.
+- A trilha de auditoria é restrita a `ROLE_ADMIN_MATRIZ`.
+
 ---
 
 ## 9. Coleção de Testes no Postman
@@ -163,9 +183,21 @@ Na pasta `postman/` estão disponibilizados os arquivos para teste completo de p
 3. Selecione o ambiente **Raízes do Nordeste - Local**.
 4. Ao disparar as requisições `01 - Login ADMIN` e `02 - Login CLIENTE`, os tokens JWT são automaticamente salvos nas variáveis de ambiente.
 
+## 10. Testes automatizados
+
+A suíte utiliza JUnit 5, Spring Boot Test, Spring Security Test e MockMvc. Ela cobre inicialização no perfil isolado de testes, login e validação do JWT, cadastro público sem elevação de privilégios, autorização da auditoria, fidelidade, reserva de estoque, aprovação e recusa simuladas, restituição integral e prevenção de restituição duplicada.
+
+Na auditoria final de 21/11/2026, `mvnw.cmd clean test` executou **19 testes**, todos aprovados.
+
 ---
 
-## 10. Estrutura de Diretórios do Projeto
+## 11. Repositório oficial
+
+**Código-fonte:** https://github.com/rafa-curso/raizes-nordeste-backend
+
+---
+
+## 12. Estrutura de Diretórios do Projeto
 
 ```text
 raizes-nordeste-backend/

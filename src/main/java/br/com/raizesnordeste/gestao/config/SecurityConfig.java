@@ -1,5 +1,6 @@
 package br.com.raizesnordeste.gestao.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -19,12 +20,23 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/**
+ * Configuração de segurança da aplicação com Spring Security 6.
+ * - Autenticação Stateless via JWT.
+ * - CORS configurado por variável de ambiente (APP_CORS_ORIGINS).
+ * - H2 Console desabilitado por padrão; habilitado apenas no perfil "dev".
+ *
+ * Autor: Rafael Inácio da Silva (RU: 4736098)
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+
+    @Value("${app.cors.allowed-origins:}")
+    private String allowedOrigins;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
@@ -35,7 +47,7 @@ public class SecurityConfig {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            .headers(headers -> headers.frameOptions(frame -> frame.disable())) // Permite visualização do H2 Console
+            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Endpoints Públicos (Documentação OpenAPI, Swagger e H2 Console)
@@ -54,7 +66,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/cardapio/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/unidades/**").permitAll()
 
-                // Gestão de Cardápio e Unidades (Apenas Gestão e Admin Matriz)
+                // Gestão de Cardápio e Unidades (Apenas Admin Matriz)
                 .requestMatchers(HttpMethod.POST, "/api/v1/cardapio/**").hasRole("ADMIN_MATRIZ")
                 .requestMatchers(HttpMethod.PUT, "/api/v1/cardapio/**").hasRole("ADMIN_MATRIZ")
                 .requestMatchers(HttpMethod.DELETE, "/api/v1/cardapio/**").hasRole("ADMIN_MATRIZ")
@@ -90,10 +102,26 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("*"));
+
+        // SEGURANÇA: Origens configuradas por variável de ambiente, sem curinga irrestrito.
+        List<String> origins = allowedOrigins == null
+                ? List.of()
+                : allowedOrigins.lines()
+                    .flatMap(line -> List.of(line.split(",")).stream())
+                    .map(String::trim)
+                    .filter(origin -> !origin.isBlank())
+                    .toList();
+
+        if (origins.stream().anyMatch(origin -> origin.equals("*") || origin.contains("*"))) {
+            throw new IllegalStateException(
+                    "APP_CORS_ORIGINS não pode conter curingas quando credenciais estão habilitadas.");
+        }
+
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

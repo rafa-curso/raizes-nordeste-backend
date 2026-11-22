@@ -71,7 +71,10 @@ public class AutenticacaoService {
             throw new ConflitoRegistroException("Já existe um cadastro ativo com o e-mail: " + emailFormatado);
         }
 
-        PerfilAcesso perfil = (request.perfil() != null) ? request.perfil() : PerfilAcesso.ROLE_CLIENTE;
+        // SEGURANÇA: O perfil é definido obrigatoriamente como ROLE_CLIENTE no cadastro público.
+        // Perfis administrativos (ADMIN_MATRIZ, GERENTE_LOJA) devem ser criados exclusivamente
+        // por procedimento controlado interno, nunca pela API pública.
+        PerfilAcesso perfil = PerfilAcesso.ROLE_CLIENTE;
 
         Usuario novoUsuario = new Usuario(
                 request.nomeCompleto().trim(),

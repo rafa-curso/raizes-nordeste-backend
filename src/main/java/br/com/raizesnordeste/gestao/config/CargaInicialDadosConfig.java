@@ -9,12 +9,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Carga inicial de dados de demonstração para a Rede Raízes do Nordeste.
+ *
+ * SEGURANÇA: Esta configuração é ativada SOMENTE nos perfis "dev" e "test".
+ * Em produção, credenciais administrativas devem ser criadas por procedimento
+ * controlado (migration SQL, script interno ou painel administrativo).
+ *
+ * Autor: Rafael Inácio da Silva (RU: 4736098)
+ */
 @Configuration
+@Profile({"dev", "test"})
 public class CargaInicialDadosConfig implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(CargaInicialDadosConfig.class);
@@ -40,7 +51,7 @@ public class CargaInicialDadosConfig implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (usuarioRepository.count() == 0) {
-            log.info("Inicializando carga de dados de demonstração para a Rede Raízes do Nordeste...");
+            log.warn("⚠ Inicializando carga de dados de DEMONSTRAÇÃO — NÃO utilizar em produção com estas credenciais.");
             inicializarUsuarios();
             inicializarUnidades();
             inicializarProdutosECardapio();
@@ -76,7 +87,7 @@ public class CargaInicialDadosConfig implements CommandLineRunner {
             PerfilAcesso.ROLE_CLIENTE,
             true
         );
-        cliente.setPontosFidelidade(50); // Cliente com pontos acumulados
+        cliente.setPontosFidelidade(50); // Cliente com pontos acumulados para demonstração
 
         usuarioRepository.saveAll(List.of(admin, gerente, cliente));
     }
@@ -138,7 +149,6 @@ public class CargaInicialDadosConfig implements CommandLineRunner {
 
         for (UnidadeFranquia unidade : unidades) {
             for (ProdutoCardapio produto : produtos) {
-                // Unidade express não possui certos itens complexos ou menor estoque
                 int quantidade = unidade.getFormatoOperacao() == FormatoOperacao.EXPRESS_REDUZIDA ? 25 : 50;
                 InventarioEstoque estoque = new InventarioEstoque(unidade, produto, quantidade, 8);
                 estoqueRepository.save(estoque);
